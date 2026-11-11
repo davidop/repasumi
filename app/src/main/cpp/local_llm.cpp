@@ -58,7 +58,6 @@ Java_com_davidop_estudiaenelbus_NativeGguf_nativeLoadModel(
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
-    mp.use_mmap = true;
     engine->model = llama_model_load_from_file(path.c_str(), mp);
     if (!engine->model) {
         fail(env, "No se pudo abrir el GGUF.");

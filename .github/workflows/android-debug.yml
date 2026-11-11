@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   debug-apk:
@@ -50,3 +50,14 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publicar APK 0.4.3 Preview en GitHub Releases
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v0.4.3-preview app/build/outputs/apk/debug/app-debug.apk#repasumi-0.4.3-preview.apk \
+            --title "Repasumi 0.4.3 Preview" \
+            --notes "APK de pruebas Android (arm64). Incluye icono de mascota y temas de 2.º ESO y 5.º Primaria. Compilación debug; no sustituye la versión estable." \
+            --prerelease \
+            --target "${GITHUB_SHA}"

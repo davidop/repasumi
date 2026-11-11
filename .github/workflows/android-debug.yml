@@ -19,10 +19,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Instalar Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Instalar plataforma Android 36
-        run: sdkmanager --install 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Preparar SDK Android (runner Ubuntu)
+        shell: bash
+        run: |
+          sdkmanager --version
+          sdkmanager --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Preparar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:

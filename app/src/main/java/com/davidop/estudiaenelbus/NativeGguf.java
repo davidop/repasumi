@@ -190,13 +190,12 @@ public final class NativeGguf {
                 }
                 String recent = recentJson == null ? "" : recentJson;
                 if (recent.length() > 900) recent = recent.substring(recent.length() - 900);
-                String prompt = "<|im_start|>system\\nEres profesor de España. Genera exactamente 2 preguntas NUEVAS, distintas de las anteriores, " +
-                    "basadas SOLO en los datos del tema. No inventes hechos. Responde SOLO JSON: " +
-                    "{\\\"questions\\\":[{\\\"type\\\":\\\"mc\\\",\\\"q\\\":\\\"...\\\",\\\"a\\\":\\\"...\\\",\\\"opts\\\":[\\\"...\\\",\\\"...\\\",\\\"...\\\"],\\\"why\\\":\\\"...\\\",\\\"src\\\":\\\"Resumen del tema\\\"}," +
-                    "{\\\"type\\\":\\\"tf\\\",\\\"q\\\":\\\"...\\\",\\\"a\\\":true,\\\"why\\\":\\\"...\\\",\\\"src\\\":\\\"Resumen del tema\\\"}]}. " +
-                    "La respuesta correcta de mc debe aparecer literalmente en opts.\\n<|im_end|>\\n<|im_start|>user\\nTema: " +
-                    topic.optString("title") + "\\nContenido:\\n" + facts.substring(0, Math.min(facts.length(), 2200)) +
-                    "\\nEvita repetir:\\n" + recent + "\\n<|im_end|>\\n<|im_start|>assistant\\n";
+                String schema = "{questions:[{type:mc,q:pregunta,a:respuesta,opts:[respuesta,otra,otra],why:explicacion,src:Resumen del tema},{type:tf,q:afirmacion,a:true,why:explicacion,src:Resumen del tema}]}";
+                String prompt = "<|im_start|>system\nEres profesor de España. Crea exactamente 2 preguntas nuevas basadas SOLO en el contenido del tema. " +
+                    "No inventes hechos. Devuelve JSON válido con claves entre comillas, sin markdown, siguiendo este esquema: " +
+                    schema + ". La respuesta mc debe figurar literalmente entre las opciones.\n<|im_end|>\n<|im_start|>user\nTema: " +
+                    topic.optString("title") + "\nContenido:\n" + facts.substring(0, Math.min(facts.length(), 2200)) +
+                    "\nEvita repetir:\n" + recent + "\n<|im_end|>\n<|im_start|>assistant\n";
                 events.emit("ai_progress", "Creando dos preguntas nuevas sin conexión…");
                 String output = nativeComplete(handle, prompt, 600);
                 int start = output.indexOf('{'), end = output.lastIndexOf('}');

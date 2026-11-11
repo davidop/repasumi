@@ -28,6 +28,8 @@ public final class NativeLearningEngine {
     private final TextRecognizer recognizer =
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS); // Modelo OCR incluido
     private volatile String extracted = "";
+    private static final int MAX_IMAGES = 30;
+    private static final int MAX_TEXT_CHARS = 150_000;
     private volatile boolean busy = false;
 
     public NativeLearningEngine(Activity activity, Events events) {
@@ -49,8 +51,8 @@ public final class NativeLearningEngine {
     public String getExtracted() { return extracted; }
 
     public void scanImages(List<Uri> uris) {
-        if (uris == null || uris.isEmpty() || uris.size() > 6) {
-            error("Selecciona entre 1 y 6 imágenes."); return;
+        if (uris == null || uris.isEmpty() || uris.size() > MAX_IMAGES) {
+            error("Selecciona entre 1 y 30 imágenes."); return;
         }
         if (busy) { error("Ya hay una operación en curso."); return; }
         busy = true;
@@ -68,8 +70,8 @@ public final class NativeLearningEngine {
                 String content = texts.get(i).trim();
                 if (content.length() < 40) continue; // Ignorar fotos ilegibles
                 String page = "Foto " + (i + 1) + ":\n" + content;
-                if (result.length() + page.length() > 10000) {
-                    emit("ocr_progress", "Texto extenso: se utilizará el fragmento reconocido inicialmente.");
+                if (result.length() + page.length() > MAX_TEXT_CHARS) {
+                    emit("ocr_progress", "Se ha alcanzado el límite de texto de este lote. Divide el tema en dos lotes.");
                     break;
                 }
                 if (result.length() > 0) result.append("\n\n");

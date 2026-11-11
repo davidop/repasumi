@@ -1,6 +1,11 @@
 package com.davidop.estudiaenelbus;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.webkit.ValueCallback;
+import java.util.ArrayList;
+import java.util.List;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -29,6 +34,9 @@ public final class MainActivity extends Activity {
     private static final String ORIGIN = "https://appassets.androidplatform.net";
     private static final String HOME = ORIGIN + "/assets/index.html";
     private WebView web;
+    private NativeLearningEngine learning;
+    private static final int PICK_PAGES = 832;
+    private ValueCallback<Uri[]> pendingPhotos;
     private TextToSpeech tts;
     private volatile boolean localSpanishVoice = false;
 
@@ -52,6 +60,12 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) { localSpanishVoice = false; }
         });
 
+        learning = new NativeLearningEngine(this, (event, payload) -> {
+            if (web == null) return;
+            String eventJson = org.json.JSONObject.quote(event);
+            String payloadJson = org.json.JSONObject.quote(payload);
+            web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent(" + eventJson + "," + payloadJson + ")", null);
+        });
         web = new WebView(this);
         web.setBackgroundColor(0xFFFFFDF8);
         WebSettings settings = web.getSettings();
@@ -83,6 +97,16 @@ public final class MainActivity extends Activity {
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(PermissionRequest request) { request.deny(); }
+            @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (pendingPhotos != null) pendingPhotos.onReceiveValue(null);
+                pendingPhotos = callback;
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.setType("image/*");
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                startActivityForResult(intent, PICK_PAGES);
+                return true;
+            }
         });
         web.setOnApplyWindowInsetsListener((view, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) {
@@ -98,7 +122,48 @@ public final class MainActivity extends Activity {
         web.loadUrl(HOME);
     }
 
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request == PICK_PAGES + 1) {
+            ArrayList<Uri> photos = new ArrayList<>();
+            if (result == RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    int count = data.getClipData().getItemCount();
+                    if (count > 6) { learning.checkModel(); web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent('error','Selecciona un máximo de 6 fotografías.')", null); return; }
+                    for (int i = 0; i < count; i++) photos.add(data.getClipData().getItemAt(i).getUri());
+                } else if (data.getData() != null) photos.add(data.getData());
+            }
+            if (!photos.isEmpty()) learning.scanImages(photos);
+            return;
+        }
+        if (request != PICK_PAGES) return;
+        ArrayList<Uri> images = new ArrayList<>();
+        if (result == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                for (int i = 0; i < Math.min(6, data.getClipData().getItemCount()); i++)
+                    images.add(data.getClipData().getItemAt(i).getUri());
+            } else if (data.getData() != null) images.add(data.getData());
+        }
+        if (pendingPhotos != null) {
+            pendingPhotos.onReceiveValue(images.isEmpty() ? null : images.toArray(new Uri[0]));
+            pendingPhotos = null;
+        }
+    }
+
     public final class AndroidBridge {
+        @JavascriptInterface public void checkModel() { learning.checkModel(); }
+        @JavascriptInterface public void downloadModel() { learning.downloadModel(); }
+        @JavascriptInterface public void scanPhotos() {
+            runOnUiThread(() -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                startActivityForResult(intent, PICK_PAGES + 1);
+            });
+        }
+        @JavascriptInterface public void generateFromOCR(String level) { learning.generateLesson(level); }
+
         @JavascriptInterface public void copyText(String value) {
             runOnUiThread(() -> {
                 ClipboardManager manager =
@@ -120,6 +185,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if (learning != null) learning.close();
         if (web != null) {
             web.removeJavascriptInterface("AndroidBridge");
             web.destroy();

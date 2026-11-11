@@ -35,6 +35,8 @@ public final class MainActivity extends Activity {
     private static final String HOME = ORIGIN + "/assets/index.html";
     private WebView web;
     private NativeLearningEngine learning;
+    private NativeGguf localModel;
+    private static final int PICK_GGUF = 835;
     private static final int PICK_PAGES = 832;
     private ValueCallback<Uri[]> pendingPhotos;
     private TextToSpeech tts;
@@ -66,6 +68,12 @@ public final class MainActivity extends Activity {
             String payloadJson = org.json.JSONObject.quote(payload);
             web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent(" + eventJson + "," + payloadJson + ")", null);
         });
+        localModel = new NativeGguf(this, (event, payload) -> runOnUiThread(() -> {
+            if (web == null) return;
+            String a = org.json.JSONObject.quote(event);
+            String b = org.json.JSONObject.quote(payload);
+            web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent(" + a + "," + b + ")", null);
+        }));
         web = new WebView(this);
         web.setBackgroundColor(0xFFFFFDF8);
         WebSettings settings = web.getSettings();
@@ -124,12 +132,17 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == PICK_GGUF) {
+            if (result == RESULT_OK && data != null && data.getData() != null)
+                localModel.importModel(data.getData());
+            return;
+        }
         if (request == PICK_PAGES + 1) {
             ArrayList<Uri> photos = new ArrayList<>();
             if (result == RESULT_OK && data != null) {
                 if (data.getClipData() != null) {
                     int count = data.getClipData().getItemCount();
-                    if (count > 6) { learning.checkModel(); web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent('error','Selecciona un máximo de 6 fotografías.')", null); return; }
+                    if (count > 6) { web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent('error','Selecciona un máximo de 6 fotografías.')", null); return; }
                     for (int i = 0; i < count; i++) photos.add(data.getClipData().getItemAt(i).getUri());
                 } else if (data.getData() != null) photos.add(data.getData());
             }
@@ -151,8 +164,15 @@ public final class MainActivity extends Activity {
     }
 
     public final class AndroidBridge {
-        @JavascriptInterface public void checkModel() { learning.checkModel(); }
-        @JavascriptInterface public void downloadModel() { learning.downloadModel(); }
+        @JavascriptInterface public void checkModel() { localModel.check(); }
+        @JavascriptInterface public void importModel() {
+            runOnUiThread(() -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                startActivityForResult(intent, PICK_GGUF);
+            });
+        }
         @JavascriptInterface public void scanPhotos() {
             runOnUiThread(() -> {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -162,7 +182,7 @@ public final class MainActivity extends Activity {
                 startActivityForResult(intent, PICK_PAGES + 1);
             });
         }
-        @JavascriptInterface public void generateFromOCR(String level) { learning.generateLesson(level); }
+        @JavascriptInterface public void generateFromOCR(String level) { localModel.generate(learning.getExtracted(), level); }
 
         @JavascriptInterface public void copyText(String value) {
             runOnUiThread(() -> {
@@ -186,6 +206,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onDestroy() {
         if (learning != null) learning.close();
+        if (localModel != null) localModel.close();
         if (web != null) {
             web.removeJavascriptInterface("AndroidBridge");
             web.destroy();

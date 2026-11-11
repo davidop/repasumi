@@ -192,6 +192,9 @@ public final class MainActivity extends Activity {
             });
         }
         @JavascriptInterface public void generateFromOCR(String level) { localModel.generate(learning.getExtracted(), level); }
+        @JavascriptInterface public void generatePractice(String topicJson, String recentJson) {
+            localModel.generatePractice(topicJson, recentJson);
+        }
 
         @JavascriptInterface public void copyText(String value) {
             runOnUiThread(() -> {

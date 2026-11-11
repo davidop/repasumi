@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import androidx.annotation.NonNull;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -99,7 +100,7 @@ public final class NativeLearningEngine {
                     @Override public void onDownloadCompleted() {
                         emit("model", "AVAILABLE");
                     }
-                    @Override public void onDownloadFailed(GenAiException exception) {
+                    @Override public void onDownloadFailed(@NonNull GenAiException exception) {
                         error("No se ha podido descargar el modelo: " + message(exception));
                     }
                 }).get(20, TimeUnit.MINUTES);
@@ -187,7 +188,7 @@ public final class NativeLearningEngine {
     /** Tres lotes reducen el riesgo de superar el límite de salida de Gemini Nano. */
     public void generateLesson(String level) {
         if (busy) { error("Ya hay una operación en curso."); return; }
-        String body = extracted;
+        final String body = extracted.length() > 7600 ? extracted.substring(0, 7600) : extracted;
         if (body.length() < 100) { error("Primero selecciona fotos y realiza el OCR."); return; }
         busy = true;
         background.execute(() -> {
@@ -200,7 +201,6 @@ public final class NativeLearningEngine {
                 }
                 String targetLevel = "ESO".equals(level) ? "ESO" : "Primaria";
                 // El OCR se recorta antes del prompt para respetar las ventanas de contexto pequeñas.
-                if (body.length() > 7600) body = body.substring(0, 7600);
                 JSONObject complete = new JSONObject();
                 JSONArray questions = new JSONArray();
                 String[] plans = {

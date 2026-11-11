@@ -1,0 +1,39 @@
+name: Publicar web en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Comprobar fuentes
+        run: python3 tools/verify_source.py
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+      - name: Subir la carpeta web
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4

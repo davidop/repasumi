@@ -15,7 +15,12 @@ android {
         versionName '0.3.0-local-beta'
     }
     buildTypes { release { minifyEnabled false } }
-    externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt' version '3.22.1' } }
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17

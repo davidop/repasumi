@@ -98,7 +98,7 @@ public final class NativeGguf {
                 if (ocr == null || ocr.trim().length() < 100)
                     throw new IllegalStateException("Primero realiza el OCR de las fotografías.");
                 if (handle == 0) handle = nativeLoadModel(path().getAbsolutePath());
-                String source = ocr.substring(0, Math.min(ocr.length(), 2400));
+                String[] pages = ocr.split("(?=Foto [0-9]+:)");
                 String school = "ESO".equals(level) ? "ESO" : "Primaria";
                 JSONObject result = new JSONObject();
                 JSONArray summary = new JSONArray();
@@ -119,6 +119,17 @@ public final class NativeGguf {
                     String instruction = batch == 0
                         ? "Objeto JSON con title (breve), emoji (📚), summary (array de 4 a 6 frases), questions (array de 2)."
                         : "Objeto JSON con questions (array de 2).";
+                    // Reparte páginas OCR entre lotes, con máximo de 2400 caracteres
+                    // por lote para respetar el contexto de un modelo de 0,5B.
+                    StringBuilder source = new StringBuilder();
+                    int startPage = (int) ((long) batch * pages.length / 7);
+                    int endPage = Math.max(startPage + 1, (int) ((long) (batch + 1) * pages.length / 7));
+                    for (int pageIndex = startPage; pageIndex < Math.min(pages.length, endPage); pageIndex++) {
+                        String page = pages[pageIndex];
+                        int remaining = 2400 - source.length();
+                        if (remaining <= 0) break;
+                        source.append(page, 0, Math.min(page.length(), remaining));
+                    }
                     String prompt = "<|im_start|>system\n" + RULES +
                         "Nivel: " + school + ". " + instruction +
                         " Tipos en orden: " + types +
@@ -126,7 +137,7 @@ public final class NativeGguf {
                         "tf {type,q,a(boolean),why,src}. fill {type,q con ____,a,opts,why,src}, 3 opciones. " +
                         "match {type,q,pairs:[[izquierda,derecha],[izquierda,derecha]],why,src}. " +
                         "order {type,q,items:[tres elementos en orden],why,src}. " +
-                        "No repitas preguntas previas. Usa 'Foto 1' como fuente cuando proceda." +
+                        "No repitas preguntas previas. Utiliza solo las etiquetas Foto N presentes en el texto OCR de este bloque." +
                         "<|im_end|>\n<|im_start|>user\nOCR:\n" + source +
                         "\n<|im_end|>\n<|im_start|>assistant\n";
                     String generated = nativeComplete(handle, prompt, 700);

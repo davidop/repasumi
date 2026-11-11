@@ -168,6 +168,48 @@ public final class NativeGguf {
             }
         });
     }
+
+    /** Genera preguntas de práctica nuevas usando exclusivamente el tema guardado. */
+    public void generatePractice(String topicJson, String recentJson) {
+        worker.execute(() -> {
+            try {
+                if (!path().isFile()) throw new IllegalStateException("Importa primero el modelo GGUF.");
+                JSONObject topic = new JSONObject(topicJson);
+                JSONArray summary = topic.getJSONArray("summary");
+                StringBuilder facts = new StringBuilder();
+                for (int i = 0; i < summary.length(); i++) facts.append(summary.getString(i)).append("\\n");
+                JSONArray original = topic.getJSONArray("questions");
+                for (int i = 0; i < Math.min(8, original.length()); i++) {
+                    JSONObject q = original.getJSONObject(i);
+                    facts.append(q.optString("q")).append(" Respuesta: ").append(q.optString("a")).append("\\n");
+                }
+                if (handle == 0) {
+                    events.emit("ai_progress", "Cargando modelo local para nuevas preguntas…");
+                    handle = nativeLoadModel(path().getAbsolutePath());
+                    if (handle == 0) throw new IllegalStateException("No se pudo cargar el modelo local.");
+                }
+                String recent = recentJson == null ? "" : recentJson;
+                if (recent.length() > 900) recent = recent.substring(recent.length() - 900);
+                String prompt = "<|im_start|>system\\nEres profesor de España. Genera exactamente 2 preguntas NUEVAS, distintas de las anteriores, " +
+                    "basadas SOLO en los datos del tema. No inventes hechos. Responde SOLO JSON: " +
+                    "{\\\"questions\\\":[{\\\"type\\\":\\\"mc\\\",\\\"q\\\":\\\"...\\\",\\\"a\\\":\\\"...\\\",\\\"opts\\\":[\\\"...\\\",\\\"...\\\",\\\"...\\\"],\\\"why\\\":\\\"...\\\",\\\"src\\\":\\\"Resumen del tema\\\"}," +
+                    "{\\\"type\\\":\\\"tf\\\",\\\"q\\\":\\\"...\\\",\\\"a\\\":true,\\\"why\\\":\\\"...\\\",\\\"src\\\":\\\"Resumen del tema\\\"}]}. " +
+                    "La respuesta correcta de mc debe aparecer literalmente en opts.\\n<|im_end|>\\n<|im_start|>user\\nTema: " +
+                    topic.optString("title") + "\\nContenido:\\n" + facts.substring(0, Math.min(facts.length(), 2200)) +
+                    "\\nEvita repetir:\\n" + recent + "\\n<|im_end|>\\n<|im_start|>assistant\\n";
+                events.emit("ai_progress", "Creando dos preguntas nuevas sin conexión…");
+                String output = nativeComplete(handle, prompt, 600);
+                int start = output.indexOf('{'), end = output.lastIndexOf('}');
+                if (start < 0 || end <= start) throw new IllegalStateException("La IA no devolvió un JSON válido.");
+                JSONObject result = new JSONObject(output.substring(start, end + 1));
+                if (result.getJSONArray("questions").length() != 2)
+                    throw new IllegalStateException("La IA no generó dos preguntas.");
+                events.emit("practice_result", result.toString());
+            } catch (Exception | LinkageError e) {
+                events.emit("practice_error", "No se pudieron crear preguntas nuevas: " + e.getMessage());
+            }
+        });
+    }
     public void close() {
         worker.execute(() -> {
             if (handle != 0) { nativeClose(handle); handle = 0; }

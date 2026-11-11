@@ -142,7 +142,7 @@ public final class MainActivity extends Activity {
             if (result == RESULT_OK && data != null) {
                 if (data.getClipData() != null) {
                     int count = data.getClipData().getItemCount();
-                    if (count > 6) { web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent('error','Selecciona un máximo de 6 fotografías.')", null); return; }
+                    if (count > 30) { web.evaluateJavascript("window.repasumiNativeEvent&&window.repasumiNativeEvent('error','Selecciona un máximo de 30 fotografías.')", null); return; }
                     for (int i = 0; i < count; i++) photos.add(data.getClipData().getItemAt(i).getUri());
                 } else if (data.getData() != null) photos.add(data.getData());
             }
@@ -153,7 +153,7 @@ public final class MainActivity extends Activity {
         ArrayList<Uri> images = new ArrayList<>();
         if (result == RESULT_OK && data != null) {
             if (data.getClipData() != null) {
-                for (int i = 0; i < Math.min(6, data.getClipData().getItemCount()); i++)
+                for (int i = 0; i < Math.min(30, data.getClipData().getItemCount()); i++)
                     images.add(data.getClipData().getItemAt(i).getUri());
             } else if (data.getData() != null) images.add(data.getData());
         }

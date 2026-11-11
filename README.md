@@ -13,7 +13,7 @@
 ## Privacidad y límites
 
 - La beta Android no solicita permiso `INTERNET`, no incluye cuentas ni backend de inferencia: no sube fotografías ni métricas. Los datos de progreso se guardan localmente.
-- **OCR:** ML Kit Text Recognition (modelo Latin bundled); seleccionar 1–6 imágenes en Añadir. Lee textos de imágenes en el propio móvil, los muestra para revisión y no persiste fotografías ni OCR.
+- **OCR:** ML Kit Text Recognition (modelo Latin bundled); seleccionar 1–30 imágenes en Añadir. Lee textos de imágenes en el propio móvil, los muestra para revisión y no persiste fotografías ni OCR.
 - **Generación:** llama.cpp nativo (JNI, ARM64) con modelo GGUF importado mediante el selector Android; inferencia 100 % local, sin AICore ni permiso INTERNET. El modelo no se incluye en la APK.\n- **Modelo piloto:** [Qwen2.5-0.5B-Instruct GGUF Q4_K_M oficial](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/blob/9217f5db79a29953eb74d5343926648285ec7e67/qwen2.5-0.5b-instruct-q4_k_m.gguf), 491.400.032 bytes, SHA-256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`. Descarga el archivo desde el navegador del móvil, abre Repasumi → Añadir → Importar modelo GGUF. La app verifica SHA-256 y copia el archivo al almacenamiento privado. APK debug verificada: [GitHub Actions #43037922722](https://github.com/davidop/repasumi/actions/runs/43037922722).\n- **Calidad:** la validación formal JSON no sustituye la verificación de los hechos. El padre debe revisar cada pregunta y su fuente antes de utilizarla con menores.
 - No se incluyen fotos de libros de terceros ni datos reales de menores.
 - El nombre y la mascota son **provisionales** mientras se comprueba la disponibilidad registral de la marca.
@@ -53,3 +53,10 @@ gradle :app:assembleDebug
 La aplicación instalada **no necesita permiso INTERNET**. El GGUF se descarga de forma independiente con el navegador y se importa localmente. El código no registra el OCR ni las preguntas en servidores.
 
 **Limitaciones:** modelo de 0,5B puede devolver JSON inválido o introducir errores factuales; el flujo falla de forma visible si un bloque no es JSON válido y exige revisión humana antes de guardar. No hay garantía de generación correcta de 14 preguntas en todas las páginas. La ejecución en Xiaomi 12T requiere pruebas físicas.
+
+## Accesibilidad y OCR (beta 0.4)
+
+- Captura de **1 a 30 fotografías** por lote; el OCR conserva hasta 150 000 caracteres en memoria y procesa las páginas de forma secuencial para reducir picos de memoria.
+- UI móvil renovada: botones de 52–58 px, texto base de 16 px, mayor contraste, estados legibles, pasos claros, etiquetas accesibles y compatibilidad con movimiento reducido.
+- Para el modelo Qwen de 0,5B, la generación sigue usando **7 bloques de 2 preguntas**. Las páginas OCR se reparten entre bloques, con un máximo de ~2400 caracteres por bloque. En temas largos **no se garantiza cubrir todo el contenido**; revisar preguntas y dividir temas extensos.
+- La compilación de la nueva APK debe terminar correctamente antes de instalarla.

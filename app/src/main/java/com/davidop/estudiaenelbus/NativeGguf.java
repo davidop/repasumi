@@ -97,15 +97,19 @@ public final class NativeGguf {
                 if (!path().isFile()) throw new IllegalStateException("Importa primero el modelo GGUF.");
                 if (ocr == null || ocr.trim().length() < 100)
                     throw new IllegalStateException("Primero realiza el OCR de las fotografías.");
-                if (handle == 0) handle = nativeLoadModel(path().getAbsolutePath());
+                if (handle == 0) {
+                    events.emit("ai_progress", "Cargando el modelo GGUF en memoria (puede tardar)…");
+                    handle = nativeLoadModel(path().getAbsolutePath());
+                    if (handle == 0) throw new IllegalStateException("No se pudo inicializar el modelo local.");
+                }
                 String[] pages = ocr.split("(?=Foto [0-9]+:)");
                 String school = "ESO".equals(level) ? "ESO" : "Primaria";
                 JSONObject result = new JSONObject();
                 JSONArray summary = new JSONArray();
                 JSONArray questions = new JSONArray();
                 // Modelo compacto: lotes de 2 preguntas y resumen breve, validación antes de guardar.
-                for (int batch = 0; batch < 7; batch++) {
-                    events.emit("ai_progress", "Generando bloque " + (batch+1) + " de 7 en el móvil…");
+                for (int batch = 0; batch < 1; batch++) {
+                    events.emit("ai_progress", "Modelo cargado. Generando 2 preguntas de prueba en el móvil…");
                     String types;
                     switch (batch) {
                         case 0: types="mc,tf"; break;
@@ -122,11 +126,11 @@ public final class NativeGguf {
                     // Reparte páginas OCR entre lotes, con máximo de 2400 caracteres
                     // por lote para respetar el contexto de un modelo de 0,5B.
                     StringBuilder source = new StringBuilder();
-                    int startPage = (int) ((long) batch * pages.length / 7);
-                    int endPage = Math.max(startPage + 1, (int) ((long) (batch + 1) * pages.length / 7));
+                    int startPage = (int) ((long) batch * pages.length / 1);
+                    int endPage = Math.max(startPage + 1, (int) ((long) (batch + 1) * pages.length / 1));
                     for (int pageIndex = startPage; pageIndex < Math.min(pages.length, endPage); pageIndex++) {
                         String page = pages[pageIndex];
-                        int remaining = 2400 - source.length();
+                        int remaining = 1200 - source.length();
                         if (remaining <= 0) break;
                         source.append(page, 0, Math.min(page.length(), remaining));
                     }
@@ -140,7 +144,7 @@ public final class NativeGguf {
                         "No repitas preguntas previas. Utiliza solo las etiquetas Foto N presentes en el texto OCR de este bloque." +
                         "<|im_end|>\n<|im_start|>user\nOCR:\n" + source +
                         "\n<|im_end|>\n<|im_start|>assistant\n";
-                    String generated = nativeComplete(handle, prompt, 700);
+                    String generated = nativeComplete(handle, prompt, 550);
                     int start = generated.indexOf('{'), end = generated.lastIndexOf('}');
                     if (start < 0 || end <= start)
                         throw new IllegalStateException("El modelo no devolvió JSON válido en el bloque " + (batch+1));

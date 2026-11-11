@@ -22,7 +22,7 @@ public final class NativeGguf {
     // Qwen2.5-0.5B-Instruct Q4_K_M: hash de archivo verificado en publicación oficial.
     // Si se cambia el modelo, hay que actualizar esta suma tras validación.
     private static final String EXPECTED_SHA256 =
-        "b5e078af7a7df6b90d3ad9e5e54d651a74689b743cfc6f73c89eb1eac42d8495";
+        "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db";
     private final Context context;
     private final Events events;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();

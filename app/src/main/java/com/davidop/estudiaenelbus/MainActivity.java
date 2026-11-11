@@ -165,6 +165,15 @@ public final class MainActivity extends Activity {
 
     public final class AndroidBridge {
         @JavascriptInterface public void checkModel() { localModel.check(); }
+        @JavascriptInterface public void openModelPage() {
+            runOnUiThread(() -> {
+                Intent browser = new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/9217f5db79a29953eb74d5343926648285ec7e67/qwen2.5-0.5b-instruct-q4_k_m.gguf"));
+                try { startActivity(browser); }
+                catch (Exception ex) { Toast.makeText(MainActivity.this,
+                    "Abre Hugging Face desde tu navegador para descargar el modelo.", Toast.LENGTH_LONG).show(); }
+            });
+        }
         @JavascriptInterface public void importModel() {
             runOnUiThread(() -> {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);

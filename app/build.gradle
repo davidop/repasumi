@@ -11,8 +11,8 @@ android {
         targetSdk 36
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild { cmake { cppFlags '-std=c++17' } }
-        versionCode 5
-        versionName '0.4.2-eso-preview'
+        versionCode 6
+        versionName '0.4.3-brand-preview'
     }
     // La beta 0.4 se instala en paralelo a 0.3 para preservar los datos existentes.
     // No es una actualización in situ: las claves debug efímeras de CI pueden diferir.

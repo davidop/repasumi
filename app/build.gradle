@@ -11,10 +11,15 @@ android {
         targetSdk 36
         ndk { abiFilters 'arm64-v8a' }
         externalNativeBuild { cmake { cppFlags '-std=c++17' } }
-        versionCode 3
-        versionName '0.3.0-local-beta'
+        versionCode 4
+        versionName '0.4.0-accessible-beta'
     }
-    buildTypes { release { minifyEnabled false } }
+    // La beta 0.4 se instala en paralelo a 0.3 para preservar los datos existentes.
+    // No es una actualización in situ: las claves debug efímeras de CI pueden diferir.
+    buildTypes {
+        debug { applicationIdSuffix '.preview' }
+        release { minifyEnabled false }
+    }
     externalNativeBuild {
         cmake {
             path 'src/main/cpp/CMakeLists.txt'

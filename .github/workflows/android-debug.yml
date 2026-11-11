@@ -56,8 +56,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v0.4.3-preview app/build/outputs/apk/debug/app-debug.apk#repasumi-0.4.3-preview.apk \
-            --title "Repasumi 0.4.3 Preview" \
-            --notes "APK de pruebas Android (arm64). Incluye icono de mascota y temas de 2.º ESO y 5.º Primaria. Compilación debug; no sustituye la versión estable." \
-            --prerelease \
-            --target "${GITHUB_SHA}"
+          if gh release view v0.4.3-preview >/dev/null 2>&1; then
+            gh release upload v0.4.3-preview "app/build/outputs/apk/debug/app-debug.apk#repasumi-0.4.3-preview.apk" --clobber
+          else
+            gh release create v0.4.3-preview "app/build/outputs/apk/debug/app-debug.apk#repasumi-0.4.3-preview.apk" \
+              --title "Repasumi 0.4.3 Preview" \
+              --notes "APK de pruebas Android (arm64). Incluye icono de mascota y temas de 2.º ESO y 5.º Primaria. Compilación debug; no sustituye la versión estable." \
+              --prerelease \
+              --target "${GITHUB_SHA}"
+          fi

@@ -21,7 +21,7 @@ Una familia hace fotos del libro y obtiene, sin que nada salga del móvil, pregu
 
 <!-- Inferido del código existente (v0.5.0-study-preview, commit 0938eec). -->
 
-- ✓ App Android con WebView que sirve una SPA de un solo archivo (`web/index.html` = `app/src/main/assets/index.html`), sin permiso INTERNET — existing
+- ✓ App Android con WebView que sirve una SPA de un solo archivo (`web/index.html` = `app/src/main/assets/index.html`) — existing. Corrección del 2026-11-13: el APK sí declara INTERNET, que añade ML Kit (`transport-backend-cct`); su eliminación pasa a Active.
 - ✓ Cinco tipos de ejercicio (mc, tf, fill, match, order) con corrección y explicación — existing
 - ✓ OCR local con ML Kit sobre 1–30 fotos — existing
 - ✓ Generación local con llama.cpp (JNI) y Qwen2.5-0.5B-Instruct Q4_K_M, con la importación del GGUF verificada por SHA-256 — existing
@@ -38,6 +38,7 @@ Una familia hace fotos del libro y obtiene, sin que nada salga del móvil, pregu
 
 <!-- Alcance de la 1.0 (milestone «1.0 · Google Play»). -->
 
+- [ ] El AAB de release no declara INTERNET ni ACCESS_NETWORK_STATE (`tools:node="remove"` y una comprobación en CI), y las librerías nativas están alineadas a 16 KB (NDK r28c)
 - [ ] Build de producción `com.repasumi`: AAB firmado (upload key en GitHub Secrets, Play App Signing) generado por CI (#16)
 - [ ] El modelo GGUF llega con Play Asset Delivery, se verifica por SHA-256 antes de usarlo y no hay que descargarlo ni importarlo a mano (#16)
 - [ ] La generación es estable en Android 10+, ARM64 y 4 GB de RAM: cancelable, con progreso por etapas, sin doble ejecución, sobrevive a la rotación y avisa claramente si el dispositivo no llega al mínimo (#2, #1)
@@ -92,6 +93,12 @@ Una familia hace fotos del libro y obtiene, sin que nada salga del móvil, pregu
 | GitHub Pages solo con portada y privacidad | La web-app dependía de jsDelivr y Hugging Face, lo que contradice la privacidad | — Pending |
 | Licencia con fuente visible y todos los derechos reservados | Rápido; protege el producto sin pasar el repo a privado ni perder Pages | — Pending |
 | Alcance de la 1.0: #16, #2 (+#1), #6, #5 mínimo, #13 mínimo, #14 y control parental | Lanzar en 3 semanas; el resto va a la 1.1 | — Pending |
+| Modelo en asset pack *install-time* (sin *fast-follow*) | No añade permisos ni declaraciones de servicio en primer plano y el modelo está desde el primer arranque. Una prueba de un día decide si se lee sin copiarlo o con una sola copia | — Pending |
+| «Reto nuevo» pasa a ser una acción del padre tras el PIN y sus preguntas van a revisión | Hoy enseña al niño preguntas sin revisar | — Pending |
+| PIN olvidado: bloqueo de pantalla del móvil o, si no hay, restablecimiento a las 24 h, con aviso en Padres | Funciona sin cuentas ni red, y un restablecimiento no pasa desapercibido | — Pending |
+| PIN guardado en Java (PBKDF2), no en `localStorage` | Queda fuera del alcance de la recuperación, la exportación o una inyección en `innerHTML` | — Pending |
+| App gratuita | Encaja con el programa de apps familiares y con el piloto; no se puede cambiar después | — Pending |
+| `web/index.html` es la única fuente; la copia de assets se genera | Evita que las dos copias se desincronicen | — Pending |
 | Revisión final en el modo examen (PR #15) | El examen prometía un resultado que no mostraba | ✓ Good |
 
 ## Evolution
@@ -112,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-12 after initialization*
+*Last updated: 2026-11-13 after research and requirements definition*

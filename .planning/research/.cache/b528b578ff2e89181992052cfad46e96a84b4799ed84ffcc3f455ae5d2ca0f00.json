@@ -1,0 +1,1 @@
+{"content":"With Play App Signing, a lost upload key can be reset via Play Console (new key PEM), users unaffected, but no uploads possible until reset is processed (hours to days). Without Play App Signing a lost key means no updates ever.","source":"web","provider":"websearch","confidence":"LOW","fetched_at":"2026-11-13T16:41:42.858Z","ttl":86400000,"kind":"web"}

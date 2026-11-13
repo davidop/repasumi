@@ -136,16 +136,71 @@ Se dejan para la 1.1. Están registrados, pero no entran en el roadmap actual.
 
 ## Traceability
 
-Qué fase cubre cada requisito. Se rellena al crear el roadmap.
+Qué fase cubre cada requisito (ver `.planning/ROADMAP.md`).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| REL-01 | Phase 1 | Pending |
+| REL-02 | Phase 1 | Pending |
+| REL-03 | Phase 1 | Pending |
+| REL-04 | Phase 1 | Pending |
+| REL-05 | Phase 1 | Pending |
+| REL-06 | Phase 1 | Pending |
+| REL-07 | Phase 1 | Pending |
+| REL-08 | Phase 1 | Pending |
+| MOD-01 | Phase 1 | Pending |
+| MOD-02 | Phase 3 | Pending |
+| MOD-03 | Phase 3 | Pending |
+| GEN-01 | Phase 5 | Pending |
+| GEN-02 | Phase 5 | Pending |
+| GEN-03 | Phase 3 | Pending |
+| GEN-04 | Phase 5 | Pending |
+| GEN-05 | Phase 5 | Pending |
+| GEN-06 | Phase 5 | Pending |
+| GEN-07 | Phase 3 | Pending |
+| GEN-08 | Phase 3 | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Pending |
+| DATA-05 | Phase 2 | Pending |
+| DATA-06 | Phase 2 | Pending |
+| REV-01 | Phase 4 | Pending |
+| REV-02 | Phase 4 | Pending |
+| REV-03 | Phase 4 | Pending |
+| REV-04 | Phase 5 | Pending |
+| REV-05 | Phase 4 | Pending |
+| REV-06 | Phase 4 | Pending |
+| REV-07 | Phase 4 | Pending |
+| REV-08 | Phase 4 | Pending |
+| REV-09 | Phase 4 | Pending |
+| GATE-01 | Phase 4 | Pending |
+| GATE-02 | Phase 4 | Pending |
+| GATE-03 | Phase 4 | Pending |
+| GATE-04 | Phase 4 | Pending |
+| GATE-05 | Phase 4 | Pending |
+| GATE-06 | Phase 4 | Pending |
+| GATE-07 | Phase 4 | Pending |
+| GATE-08 | Phase 3 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 6 | Pending |
+| TEST-03 | Phase 3 | Pending |
+| TEST-04 | Phase 1 | Pending |
+| STORE-01 | Phase 6 | Pending |
+| STORE-02 | Phase 6 | Pending |
+| STORE-03 | Phase 6 | Pending |
+| STORE-04 | Phase 6 | Pending |
+| STORE-05 | Phase 6 | Pending |
+| STORE-06 | Phase 2 | Pending |
+| STORE-07 | Phase 4 | Pending |
+| STORE-08 | Phase 6 | Pending |
+| STORE-09 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 55 total
-- Mapped to phases: 0
-- Unmapped: 55 ⚠️
+- Mapped to phases: 55
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-11-13*
-*Last updated: 2026-11-13 after initial definition*
+*Last updated: 2026-11-13 after roadmap creation (traceability)*

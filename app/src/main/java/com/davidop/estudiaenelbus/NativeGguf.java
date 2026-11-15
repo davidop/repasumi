@@ -132,7 +132,8 @@ public final class NativeGguf {
                         String page = pages[pageIndex];
                         int remaining = 1200 - source.length();
                         if (remaining <= 0) break;
-                        source.append(page, 0, Math.min(page.length(), remaining));
+                        source.append(PromptSafety.escapeUntrustedText(
+                            page.substring(0, Math.min(page.length(), remaining))));
                     }
                     String prompt = "<|im_start|>system\n" + RULES +
                         "Nivel: " + school + ". " + instruction +
@@ -177,11 +178,14 @@ public final class NativeGguf {
                 JSONObject topic = new JSONObject(topicJson);
                 JSONArray summary = topic.getJSONArray("summary");
                 StringBuilder facts = new StringBuilder();
-                for (int i = 0; i < summary.length(); i++) facts.append(summary.getString(i)).append("\\n");
+                for (int i = 0; i < summary.length(); i++)
+                    facts.append(PromptSafety.escapeUntrustedText(summary.getString(i))).append("\\n");
                 JSONArray original = topic.getJSONArray("questions");
                 for (int i = 0; i < Math.min(8, original.length()); i++) {
                     JSONObject q = original.getJSONObject(i);
-                    facts.append(q.optString("q")).append(" Respuesta: ").append(q.optString("a")).append("\\n");
+                    facts.append(PromptSafety.escapeUntrustedText(q.optString("q")))
+                        .append(" Respuesta: ")
+                        .append(PromptSafety.escapeUntrustedText(q.optString("a"))).append("\\n");
                 }
                 if (handle == 0) {
                     events.emit("ai_progress", "Cargando modelo local para nuevas preguntas…");
@@ -190,11 +194,13 @@ public final class NativeGguf {
                 }
                 String recent = recentJson == null ? "" : recentJson;
                 if (recent.length() > 900) recent = recent.substring(recent.length() - 900);
+                recent = PromptSafety.escapeUntrustedText(recent);
                 String schema = "{questions:[{type:mc,q:pregunta,a:respuesta,opts:[respuesta,otra,otra],why:explicacion,src:Resumen del tema},{type:tf,q:afirmacion,a:true,why:explicacion,src:Resumen del tema}]}";
                 String prompt = "<|im_start|>system\nEres profesor de España. Crea exactamente 2 preguntas nuevas basadas SOLO en el contenido del tema. " +
                     "No inventes hechos. Devuelve JSON válido con claves entre comillas, sin markdown, siguiendo este esquema: " +
                     schema + ". La respuesta mc debe figurar literalmente entre las opciones.\n<|im_end|>\n<|im_start|>user\nTema: " +
-                    topic.optString("title") + "\nContenido:\n" + facts.substring(0, Math.min(facts.length(), 2200)) +
+                    PromptSafety.escapeUntrustedText(topic.optString("title")) +
+                    "\nContenido:\n" + facts.substring(0, Math.min(facts.length(), 2200)) +
                     "\nEvita repetir:\n" + recent + "\n<|im_end|>\n<|im_start|>assistant\n";
                 events.emit("ai_progress", "Creando dos preguntas nuevas sin conexión…");
                 String output = nativeComplete(handle, prompt, 600);

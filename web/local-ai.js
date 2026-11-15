@@ -2,6 +2,7 @@
 // Implementa en la web los mismos métodos y eventos que AndroidBridge (NativeLearningEngine + NativeGguf):
 // OCR con Tesseract.js y generación con wllama (llama.cpp en WebAssembly/WebGPU) usando el mismo GGUF y prompt.
 // Las fotos y el texto nunca salen del navegador: la red solo se usa para descargar librerías y el modelo.
+import { sanitizePromptText } from './prompt-safety.mjs';
 
 const WLLAMA = 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.8.1/esm/index.js';
 const WLLAMA_WASM = 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.8.1/esm/wasm/wllama.wasm';
@@ -230,7 +231,7 @@ export async function generateFromOCR(level) {
     for (const page of extracted.split(/(?=Foto [0-9]+:)/)) {
       const remaining = 1200 - source.length;
       if (remaining <= 0) break;
-      source += page.slice(0, remaining);
+      source += sanitizePromptText(page.slice(0, remaining));
     }
     const prompt = '<|im_start|>system\n' + RULES +
       'Nivel: ' + school + '. Objeto JSON con title (breve), emoji (📚), summary (array de 4 a 6 frases), questions (array de 2).' +
@@ -257,15 +258,17 @@ export async function generatePractice(topicJson, recentJson) {
   busy = true;
   try {
     const topic = JSON.parse(topicJson);
-    let facts = topic.summary.map(s => s + '\n').join('');
-    for (const q of topic.questions.slice(0, 8)) facts += (q.q || '') + ' Respuesta: ' + (q.a ?? '') + '\n';
+    let facts = topic.summary.map(s => sanitizePromptText(s) + '\n').join('');
+    for (const q of topic.questions.slice(0, 8))
+      facts += sanitizePromptText(q.q || '') + ' Respuesta: ' + sanitizePromptText(q.a ?? '') + '\n';
     let recent = recentJson || '';
     if (recent.length > 900) recent = recent.slice(-900);
+    recent = sanitizePromptText(recent);
     const schema = '{questions:[{type:mc,q:pregunta,a:respuesta,opts:[respuesta,otra,otra],why:explicacion,src:Resumen del tema},{type:tf,q:afirmacion,a:true,why:explicacion,src:Resumen del tema}]}';
     const prompt = '<|im_start|>system\nEres profesor de España. Crea exactamente 2 preguntas nuevas basadas SOLO en el contenido del tema. ' +
       'No inventes hechos. Devuelve JSON válido con claves entre comillas, sin markdown, siguiendo este esquema: ' +
       schema + '. La respuesta mc debe figurar literalmente entre las opciones.\n<|im_end|>\n<|im_start|>user\nTema: ' +
-      (topic.title || '') + '\nContenido:\n' + facts.slice(0, 2200) +
+      sanitizePromptText(topic.title || '') + '\nContenido:\n' + facts.slice(0, 2200) +
       '\nEvita repetir:\n' + recent + '\n<|im_end|>\n<|im_start|>assistant\n';
     const { text, stats } = await complete(prompt, 600, 'Creando dos preguntas nuevas en tu navegador', GBNF_PRACTICE);
     const result = extractJson(text);

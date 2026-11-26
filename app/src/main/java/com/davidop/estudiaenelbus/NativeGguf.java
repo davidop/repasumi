@@ -207,13 +207,63 @@ public final class NativeGguf {
                 int start = output.indexOf('{'), end = output.lastIndexOf('}');
                 if (start < 0 || end <= start) throw new IllegalStateException("La IA no devolvió un JSON válido.");
                 JSONObject result = new JSONObject(output.substring(start, end + 1));
-                if (result.getJSONArray("questions").length() != 2)
-                    throw new IllegalStateException("La IA no generó dos preguntas.");
+                validatePractice(result.getJSONArray("questions"), original, topic.optJSONArray("practiceHistory"));
                 events.emit("practice_result", result.toString());
             } catch (Exception | LinkageError e) {
                 events.emit("practice_error", "No se pudieron crear preguntas nuevas: " + e.getMessage());
             }
         });
+    }
+    // Structural validation only: factual correctness still requires review.
+    static String questionKey(String value) {
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFKD)
+            .replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT)
+            .replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+    }
+    private static String requiredText(JSONObject q, String field) throws org.json.JSONException {
+        Object value = q.get(field);
+        if (!(value instanceof String) || ((String) value).trim().isEmpty())
+            throw new IllegalArgumentException("Campo inválido: " + field);
+        return ((String) value).trim();
+    }
+    static void validatePractice(JSONArray generated, JSONArray original, JSONArray history)
+            throws org.json.JSONException {
+        if (generated.length() != 2) throw new IllegalArgumentException("Se requieren dos preguntas nuevas.");
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (JSONArray bank : new JSONArray[]{original, history}) {
+            if (bank == null) continue;
+            for (int i = 0; i < bank.length(); i++) {
+                JSONObject q = bank.optJSONObject(i);
+                if (q != null) seen.add(questionKey(q.optString("q")));
+            }
+        }
+        for (int i = 0; i < generated.length(); i++) {
+            JSONObject q = generated.getJSONObject(i);
+            String key = questionKey(requiredText(q, "q"));
+            if (key.isEmpty() || !seen.add(key))
+                throw new IllegalArgumentException("Pregunta duplicada o vacía.");
+            requiredText(q, "why");
+            requiredText(q, "src");
+            String type = requiredText(q, "type");
+            if ("tf".equals(type)) {
+                if (!(q.get("a") instanceof Boolean))
+                    throw new IllegalArgumentException("Respuesta verdadero/falso inválida.");
+            } else if ("mc".equals(type)) {
+                String answer = requiredText(q, "a");
+                JSONArray opts = q.getJSONArray("opts");
+                java.util.Set<String> keys = new java.util.HashSet<>();
+                boolean found = false;
+                if (opts.length() != 3) throw new IllegalArgumentException("Se requieren tres opciones.");
+                for (int j = 0; j < opts.length(); j++) {
+                    Object option = opts.get(j);
+                    if (!(option instanceof String)) throw new IllegalArgumentException("Opción inválida.");
+                    String k = questionKey((String) option);
+                    if (k.isEmpty() || !keys.add(k)) throw new IllegalArgumentException("Opción duplicada o vacía.");
+                    found |= answer.equals(option);
+                }
+                if (!found) throw new IllegalArgumentException("Respuesta ausente de las opciones.");
+            } else throw new IllegalArgumentException("Tipo de práctica no admitido.");
+        }
     }
     public void close() {
         worker.execute(() -> {
